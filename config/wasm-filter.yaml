@@ -8,6 +8,22 @@ spec:
     labels:
       istio: ingressgateway
   configPatches:
+    # Body collector for input
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.buffer
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.buffer.v3.Buffer
+            max_request_bytes: 1048576 # 1MB buffer?
+    # PII filter - should apply on both requests and responses?
     - applyTo: HTTP_FILTER
       match:
         context: GATEWAY
@@ -24,7 +40,7 @@ spec:
             "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
             config:
               vmConfig:
-                vmId: "pii-input-filter"
+                vmId: "pii-filter"
                 runtime: "envoy.wasm.runtime.v8"
                 code:
                   local:
@@ -32,23 +48,3 @@ spec:
               configuration:
                 "@type": type.googleapis.com/google.protobuf.StringValue
                 value: "{}"
-    - applyTo: HTTP_FILTER
-      match:
-        context: GATEWAY
-        listener:
-          filterChain:
-            filter:
-              name: envoy.filters.network.http_connection_manager
-      patch:
-        operation: INSERT_BEFORE
-        value:
-          name: envoy.filters.http.wasm
-          typed_config:
-            "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
-            config:
-              vmConfig:
-                vmId: "pii-output-filter"
-                runtime: "envoy.wasm.runtime.v8"
-                code:
-                  local:
-                    filename: /etc/envoy/wasm/rust_pii_wasm_filter.wasm
