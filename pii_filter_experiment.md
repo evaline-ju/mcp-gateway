@@ -27,6 +27,7 @@
 
 ## Resources
 - https://istio.io/latest/docs/reference/config/networking/envoy-filter/
+- https://istio.io/latest/docs/reference/config/proxy_extensions/wasm-plugin/
 - https://github.com/proxy-wasm/proxy-wasm-rust-sdk
 
 
