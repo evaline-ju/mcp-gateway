@@ -4,7 +4,7 @@
     ```
     extraMounts:
     - hostPath: /Users/evalineju/rust-pii-wasm-filter/target/wasm32-unknown-unknown/release
-        containerPath: /ej-data
+      containerPath: /ej-data
     ```
 
 - Applied the Persistent Volume (PV) and Persistent Volume Claim (PVC) referencing the container path at the [PV and PVC configs](./config/wasm-pvc.yaml).
@@ -25,9 +25,17 @@
 - Restart the `mcp-gateway-istio` deployment to pick up changes - `oc rollout restart deployment/mcp-gateway-istio -n gateway-system`. Not sure if 100% necessary
 - Try tool(s) via MCP inspector: `make inspect-gateway`
 
+## Resources
+- https://istio.io/latest/docs/reference/config/networking/envoy-filter/
+- https://github.com/proxy-wasm/proxy-wasm-rust-sdk
+
+
+## Mitigated
+- Info logs from WASM filter have not been visible: `make debug-envoy-impl` to curl an admin config endpoint in Envoy to enable debug logging
+- Kuadrant install is not up re: limitador-operator so this was tried without, with other local installs done via `make local-env-setup`
+
 
 ## Gaps
-- Kuadrant install is not up re: limitador-operator so this was tried without, with other local install done via `make local-env-setup`
-- Info logs from WASM filter have not been visible
 - Errors at least shown via MCP inspector could be more helpful
+- PII filter seems to be applied at response rather than request even though regex should apply at request
 - PII filter gap: string replacement especially with strings longer than the original string in an earlier iteration would lead to JSON errors
