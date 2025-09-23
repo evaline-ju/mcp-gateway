@@ -1,0 +1,13 @@
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: wasm-pii-filter
+  namespace: istio-system
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  url: file:///etc/envoy/wasm/rust_pii_wasm_filter.wasm
+  pluginConfig:
+    mode: "dual"
+  phase: AUTHN

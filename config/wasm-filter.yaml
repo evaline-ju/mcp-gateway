@@ -1,0 +1,54 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: wasm-pii-filter
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          port: 8080
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.wasm
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+            config:
+              vmConfig:
+                vmId: "pii-input-filter"
+                runtime: "envoy.wasm.runtime.v8"
+                code:
+                  local:
+                    filename: /etc/envoy/wasm/rust_pii_wasm_filter.wasm
+              configuration:
+                "@type": type.googleapis.com/google.protobuf.StringValue
+                value: "{}"
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.filters.http.wasm
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+            config:
+              vmConfig:
+                vmId: "pii-output-filter"
+                runtime: "envoy.wasm.runtime.v8"
+                code:
+                  local:
+                    filename: /etc/envoy/wasm/rust_pii_wasm_filter.wasm
