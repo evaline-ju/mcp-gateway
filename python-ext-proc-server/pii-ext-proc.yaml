@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pii-extproc-service
+  namespace: istio-system
+spec:
+  selector:
+    app: pii-extproc
+  ports:
+    - protocol: TCP
+      port: 50052
+      targetPort: 50052
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pii-extproc
+  namespace: istio-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pii-extproc
+  template:
+    metadata:
+      labels:
+        app: pii-extproc
+    spec:
+      containers:
+        - name: pii-extproc
+          # Built from Dockerfile: docker build -t ej-extproc-server:latest .
+          # Load onto kind cluster: kind load docker-image ej-extproc-server:latest --name mcp-gateway
+          image: ej-extproc-server:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 50052
