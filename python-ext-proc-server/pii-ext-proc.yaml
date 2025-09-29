@@ -7,7 +7,8 @@ spec:
   selector:
     app: pii-extproc
   ports:
-    - protocol: TCP
+    - name: grpc
+      protocol: TCP
       port: 50052
       targetPort: 50052
 ---
@@ -36,29 +37,29 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 50052
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-extproc-from-gateway
-  namespace: istio-system  # Namespace with ext_proc service
-spec:
-  podSelector:
-    matchLabels:
-      app: pii-extproc  # Ext proc pod labels
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          istio: ingressgateway  # label of the gateway pods
-      # namespaceSelector:
-      #   matchLabels:
-      #     istio-injection: enabled  # matches namespaces with Istio sidecar-injection, optional
-    ports:
-    - protocol: TCP
-      port: 50052
-  policyTypes:
-  - Ingress
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: NetworkPolicy
+# metadata:
+#   name: allow-extproc-from-gateway
+#   namespace: istio-system  # Namespace with ext_proc service
+# spec:
+#   podSelector:
+#     matchLabels:
+#       app: pii-extproc  # Ext proc pod labels
+#   ingress:
+#   - from:
+#     # - namespaceSelector:
+#     #     matchLabels:
+#     #       istio-injection: enabled  # matches namespaces with Istio sidecar-injection, optional
+#     - podSelector:
+#         matchLabels:
+#           istio: ingressgateway  # label of the gateway pods
+#     ports:
+#     - protocol: TCP
+#       port: 50052
+#   policyTypes:
+#   - Ingress
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
