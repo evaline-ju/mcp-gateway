@@ -1,6 +1,7 @@
 # Translated from Rust WASM filter with help of generative model
 import asyncio
 import re
+import sys
 import logging
 from typing import AsyncIterator
 
@@ -9,7 +10,7 @@ from envoy.service.ext_proc.v3 import external_processor_pb2 as ep
 from envoy.service.ext_proc.v3 import external_processor_pb2_grpc as ep_grpc
 from grpc_reflection.v1alpha import reflection
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger("ext-proc-pii")
 
 # Regexes
@@ -36,6 +37,10 @@ class ExtProcServicer(ep_grpc.ExternalProcessorServicer):
         logger.info("Inside Process function")
         async for req in request_iterator:
             # Traffic should flow through, leaving body unchanged if no redaction happens
+            logger.info("Inside Request iterator")
+
+            if req.HasField("request_headers"):
+                logger.info("Got headers")
 
             # ---- Request body chunk ----
             if req.HasField("request_body") and req.request_body.body:
