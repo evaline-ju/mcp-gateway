@@ -9,6 +9,7 @@ import grpc
 from envoy.service.ext_proc.v3 import external_processor_pb2 as ep
 from envoy.service.ext_proc.v3 import external_processor_pb2_grpc as ep_grpc
 from grpc_reflection.v1alpha import reflection
+from envoy.extensions.filters.http.ext_proc.v3 import processing_mode_pb2 as pm
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger("ext-proc-pii")
@@ -34,60 +35,82 @@ class ExtProcServicer(ep_grpc.ExternalProcessorServicer):
     """
 
     async def Process(self, request_iterator: AsyncIterator[ep.ProcessingRequest], context) -> AsyncIterator[ep.ProcessingResponse]:
-        logger.info("Inside Process function")
+        #logger.info("Inside Process function")
+
+        logger.info("Started gRPC stream")
+        req_body_buf = bytearray()
+        resp_body_buf = bytearray()
+
         async for req in request_iterator:
-            # Traffic should flow through, leaving body unchanged if no redaction happens
-            logger.info("Inside Request iterator")
-
+            # logger.info("Inside request iterator")
+            # logger.info(f"Request {req}")
+            # ---- Request headers ----
             if req.HasField("request_headers"):
-                logger.info("Got headers")
+                logger.info("Received request headers")
+                yield ep.ProcessingResponse(
+                    request_headers=ep.HeadersResponse(),
+                    mode_override=pm.ProcessingMode(
+                        request_body_mode=pm.ProcessingMode.BUFFERED,
+                        response_body_mode=pm.ProcessingMode.NONE,
+                    ),
+                )
 
-            # ---- Request body chunk ----
+            # ---- Request body chunks ----
             if req.HasField("request_body") and req.request_body.body:
-                logger.info("Looking at request body chunk")
+                logger.info("Looking at request body")
                 chunk = req.request_body.body
-                try:
-                    text = chunk.decode("utf-8")
-                except UnicodeDecodeError:
-                    # Binary or partial UTF-8 chunk; skip mutation
-                    continue
-                redacted = redact_text(text)
-                if redacted != text:
-                    logger.info("Redaction happened for request body chunk")
-                    body_resp = ep.ProcessingResponse(
-                        request_body=ep.BodyResponse(
-                            response=ep.CommonResponse(
-                                body_mutation=ep.BodyMutation(
-                                    body=redacted.encode("utf-8")
+                req_body_buf.extend(chunk)
+
+                if getattr(req.request_body, "end_of_stream", False):
+                    try:
+                        text = req_body_buf.decode("utf-8")
+                    except UnicodeDecodeError:
+                        logger.debug("Request body not UTF-8; skipping")
+                    else:
+                        redacted = redact_text(text)
+                        if redacted != text:
+                            logger.info("Redacted request body")
+                            body_resp = ep.ProcessingResponse(
+                                request_body=ep.BodyResponse(
+                                    response=ep.CommonResponse(
+                                        body_mutation=ep.BodyMutation(
+                                            body=redacted.encode("utf-8")
+                                        )
+                                    )
                                 )
                             )
-                        )
-                    )
-                    yield body_resp
+                            yield body_resp
 
-            # ---- Response body chunk ----
+                    req_body_buf.clear()
+
+            # ---- Response body chunks ----
             if req.HasField("response_body") and req.response_body.body:
-                logger.info("Looking at response body chunk")
+                logger.info("Looking at response body")
                 chunk = req.response_body.body
-                try:
-                    text = chunk.decode("utf-8")
-                except UnicodeDecodeError:
-                    continue
-                redacted = redact_text(text)
-                if redacted != text:
-                    logger.info("Redaction happened for response body chunk")
-                    body_resp = ep.ProcessingResponse(
-                        response_body=ep.BodyResponse(
-                            response=ep.CommonResponse(
-                                body_mutation=ep.BodyMutation(
-                                    body=redacted.encode("utf-8")
+                resp_body_buf.extend(chunk)
+
+                if getattr(req.response_body, "end_of_stream", False):
+                    try:
+                        text = resp_body_buf.decode("utf-8")
+                    except UnicodeDecodeError:
+                        logger.debug("Response body not UTF-8; skipping")
+                    else:
+                        redacted = redact_text(text)
+                        if redacted != text:
+                            logger.info("Redacted response body")
+                            body_resp = ep.ProcessingResponse(
+                                response_body=ep.BodyResponse(
+                                    response=ep.CommonResponse(
+                                        body_mutation=ep.BodyMutation(
+                                            body=redacted.encode("utf-8")
+                                        )
+                                    )
                                 )
                             )
-                        )
-                    )
-                    yield body_resp
+                            yield body_resp
+                    resp_body_buf.clear()
 
-        logger.debug("gRPC stream closed")
+        logger.info("gRPC stream closed")
 
 async def serve(host: str = "0.0.0.0", port: int = 50052):
     server = grpc.aio.server()

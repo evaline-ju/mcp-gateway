@@ -21,9 +21,14 @@ spec:
       operation: INSERT_BEFORE
       value:
         name: envoy.filters.http.ext_proc
+        subFilter:
+          name: "envoy.filters.http.router"
         typed_config:
           "@type": type.googleapis.com/envoy.extensions.filters.http.ext_proc.v3.ExternalProcessor
           failure_mode_allow: true
+          mutation_rules:
+            allow_all_routing: true
+          # message_timeout: 10s
           processing_mode:
             request_header_mode: 'SEND'
             response_header_mode: 'SEND'

@@ -5,6 +5,6 @@
     - These are now checked in under [src](./src/) for ease of use
 - The [Dockerfile](./Dockerfile) was leveraged to build the server into a container image - `docker build -t ej-extproc-server:latest .`, which was then loaded to the kind cluster via `kind load docker-image ej-extproc-server:latest --name mcp-gateway`
 - The "PII service" was deployed via the deployment and exposed with the service in the [pii-ext-proc configs](./pii-ext-proc.yaml)
-- An `EnvoyFilter` was attempted to be deployed through [`pii-ext-proc-filter`](./pii-ext-proc-filter.yaml)
+- An `EnvoyFilter` was deployed through [`pii-ext-proc-filter`](./pii-ext-proc-filter.yaml)
 - `make inspect-gateway` was again used to try tool calls out through the MCP inspector
 
