@@ -60,14 +60,14 @@ spec:
 #       port: 50052
 #   policyTypes:
 #   - Ingress
----
-apiVersion: networking.istio.io/v1beta1
-kind: DestinationRule
-metadata:
-  name: pii-extproc-dest-rule
-  namespace: istio-system
-spec:
-  host: pii-extproc-service.istio-system.svc.cluster.local
-  trafficPolicy:
-    tls:
-      mode: DISABLE
+# ---
+# apiVersion: networking.istio.io/v1beta1
+# kind: DestinationRule
+# metadata:
+#   name: pii-extproc-dest-rule
+#   namespace: istio-system
+# spec:
+#   host: pii-extproc-service.istio-system.svc.cluster.local
+#   trafficPolicy:
+#     tls:
+#       mode: DISABLE
