@@ -8,3 +8,5 @@
 - An `EnvoyFilter` was deployed through [`pii-ext-proc-filter`](./pii-ext-proc-filter.yaml)
 - `make inspect-gateway` was again used to try tool calls out through the MCP inspector
 
+## UX pain points
+-
