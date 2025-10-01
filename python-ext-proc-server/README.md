@@ -9,4 +9,6 @@
 - `make inspect-gateway` was again used to try tool calls out through the MCP inspector
 
 ## UX pain points
--
+- Envoy Python proto compilation - many and overlapping dependencies e.g. `udpa` vs. `xds` annotations. I had to hack my compiled directories for there not to be issues
+- Streaming vs. buffering did not quite seem straightforward here - updating the filter modes. By [definition](https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/ext_proc/v3/ext_proc.proto.html#extensions-filters-http-ext-proc-v3-externalprocessor) a bidirectional stream server is expected. However, only request headers were received by the Python server until specific processing to buffer on request headers was added.
+- gRPC server debugging - mitigated by adding reflection
