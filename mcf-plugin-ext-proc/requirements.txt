@@ -1,0 +1,4 @@
+grpcio>=1.75.0
+grpcio-tools>=1.75.0
+grpcio-reflection>=1.75.0
+mcp-contextforge-gateway>=0.7.0
