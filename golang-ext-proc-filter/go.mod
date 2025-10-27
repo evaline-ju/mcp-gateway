@@ -1,10 +1,10 @@
 module github.com/julianstephen/golang-ext-proc-filter
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/envoyproxy/go-control-plane/envoy v1.35.0
-	google.golang.org/grpc v1.73.0
+	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
 )
 

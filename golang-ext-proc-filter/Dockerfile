@@ -1,5 +1,5 @@
 ### Build stage
-FROM golang:1.23.0-alpine AS build
+FROM golang:1.24.0-alpine AS build
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 
