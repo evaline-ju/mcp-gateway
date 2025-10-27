@@ -1,18 +1,19 @@
 package main
 
 import (
-	//"context"
+	"io"
 	"log"
 	"log/slog"
 	"net"
 
-	//ext_proc "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
-	ext_proc "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-	ext_proc_pb "github.com/envoyproxy/go-control-plane/envoy/service/ext_proc/v3"
-        "google.golang.org/protobuf/types/known/wrapperspb"
 	"google.golang.org/grpc"
-	//"google.golang.org/grpc/codes"
-	//"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+
+    // ext_proc_pb "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/ext_proc/v3"
+    ext_proc "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	ext_proc_pb "github.com/envoyproxy/go-control-plane/envoy/service/ext_proc/v3"
 )
 
 // extProcServer implements the ext_proc_pb.ExternalProcessingServiceServer interface
@@ -22,10 +23,21 @@ type extProcServer struct {
 
 // Process handles the gRPC stream for external processing
 func (s *extProcServer) Process(stream ext_proc_pb.ExternalProcessor_ProcessServer) error {
+	log.Println("[Process] Starting processing loop")
+
 	for {
-		slog.Info("In Proces")
+		slog.Info("In Process")
 		req, err := stream.Recv()
+		if err == io.EOF {
+			log.Println("[Process] Received EOF, terminating processing loop")
+			return nil
+		}
 		if err != nil {
+			if status.Code(err) == codes.Canceled {
+				log.Println("[Process] Stream cancelled, finishing up")
+				return nil
+			}
+			log.Printf("[Process] Error receiving request: %v", err)
 			return err
 		}
 
