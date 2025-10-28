@@ -57,7 +57,7 @@ func (s *extProcServer) Process(stream ext_proc_pb.ExternalProcessor_ProcessServ
 								{
 									Header: &ext_proc.HeaderValue{
 										Key:   "x-custom-request-header",
-										Value: "processed-by-go-ext-proc",
+										RawValue: []byte("processed-by-go-ext-proc"),
 									},
 									Append: &wrapperspb.BoolValue{Value: false},
 								},
@@ -98,8 +98,8 @@ func (s *extProcServer) Process(stream ext_proc_pb.ExternalProcessor_ProcessServ
 			slog.Info("Received unhandled request type: %T", req.Request)
 		}
 
-	        log.Printf("Modify header: %v", resp)
-	        slog.Info("Modify header: %v", resp)
+		log.Printf("Modify header: %v", resp)
+		// slog.Info("Modify header: %v", resp)
 		if err := stream.Send(resp); err != nil {
 			return err
 		}
