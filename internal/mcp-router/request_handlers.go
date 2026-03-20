@@ -339,6 +339,10 @@ data: {"result":{"content":[{"type":"text","text":"MCP error -32602: Tool not fo
 	headers.WithMCPToolName(upstreamToolName)
 	mcpReq.ReWriteToolName(upstreamToolName)
 	headers.WithMCPServerName(serverInfo.Name)
+	// Inject credential for the backend MCP server if configured
+	if serverInfo.Credential != "" {
+		headers.WithAuth(serverInfo.Credential)
+	}
 
 	// create a new session with backend mcp if one doesn't exist
 	var exists map[string]string
@@ -522,15 +526,23 @@ func (s *ExtProcServer) initializeMCPSeverSession(ctx context.Context, mcpReq *M
 		// We don't want to pass through any sudo routing headers :authority, :path etc or the mcp-session-id from the gateway. The mcp-session-id will be
 		// set by the client based on the target backend. otherwise pass through everything from the client in case of custom headers
 		for _, h := range mcpReq.Headers.Headers {
-			if !strings.HasPrefix(strings.ToLower(h.Key), ":") && strings.ToLower(h.Key) != "mcp-session-id" {
-				passThroughHeaders[h.Key] = string(h.RawValue)
+			lk := strings.ToLower(h.Key)
+			// Skip pseudo-headers, session ID, and content negotiation headers
+			// (mcp-go sets Accept/Content-Type correctly for the protocol version)
+			if strings.HasPrefix(lk, ":") || lk == "mcp-session-id" || lk == "accept" || lk == "content-type" || lk == "content-length" {
+				continue
 			}
+			passThroughHeaders[h.Key] = string(h.RawValue)
 		}
 		// ensure these gateway heades are set
 		passThroughHeaders["x-mcp-method"] = mcpReq.Method
 		passThroughHeaders["x-mcp-servername"] = mcpReq.serverName
 		passThroughHeaders["x-mcp-toolname"] = mcpReq.ToolName()
 		passThroughHeaders["user-agent"] = "mcp-router"
+	}
+	// Inject credential for the backend MCP server if configured
+	if mcpServerConfig.Credential != "" {
+		passThroughHeaders["authorization"] = mcpServerConfig.Credential
 	}
 	s.Logger.DebugContext(ctx, "initializing target as no mcp-session-id found for client", "server ", mcpReq.serverName, "with passthrough headers", passThroughHeaders)
 
